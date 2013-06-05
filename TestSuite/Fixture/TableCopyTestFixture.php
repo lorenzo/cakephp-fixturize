@@ -94,12 +94,12 @@ class TableCopyTestFixture extends CakeTestFixture {
  *
  * @return void
  */
-	public function trucate($db) {
+	public function truncate($db) {
 		if (!self::$truncating) {
 			self::$log = $db->getLog();
 			self::$truncating = true;
 		}
-		foreach (self::$log as $i => $q) {
+		foreach (self::$log['log'] as $i => $q) {
 			if (!preg_match('/^UPDATE|^INSERT|^DELETE/i', $q['query'])) {
 				unset(self::$log[$i]);
 				continue;
@@ -113,4 +113,22 @@ class TableCopyTestFixture extends CakeTestFixture {
 
 		return true;
 	}
+
+/**
+ * Drops the table from the test datasource
+ *
+ * @return void
+ */
+	public function drop($db) {
+		$this->Schema->build(array($this->table => $this->fields));
+		try {
+
+			$db->execute('DROP TABLE ' . $db->fullTableName($this->table), array('log' => false));
+			$this->created = array_diff($this->created, array($db->configKeyName));
+		} catch (Exception $e) {
+			return false;
+		}
+		return true;
+	}
+
 }
