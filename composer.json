@@ -9,6 +9,10 @@
         {
             "name": "José Lorenzo Rodríguez",
             "role": "Author"
+        },
+		{
+            "name": "Christian Winther",
+            "role": "Contributor"
         }
     ],
     "require": {
