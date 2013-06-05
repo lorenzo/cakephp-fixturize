@@ -1,0 +1,17 @@
+{
+    "name": "lorenzo/cakephp-fixturize",
+    "description": "Provides cutom Fixture classes to help managing fixture in pure SQL",
+    "type": "cakephp-plugin",
+    "keywords": ["cakephp", "test", "fixture"],
+    "homepage": "https://github.com/lorenzo/cakephp-fixturize",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "José Lorenzo Rodríguez",
+            "role": "Author"
+        }
+    ],
+    "require": {
+        "composer/installers": "*"
+    }
+}
