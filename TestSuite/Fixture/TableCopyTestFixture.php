@@ -104,7 +104,7 @@ class TableCopyTestFixture extends CakeTestFixture {
 				unset(self::$log[$i]);
 				continue;
 			}
-			if (strpos($this->table, $q['query'])) {
+			if (strpos($q['query'], $this->table)) {
 				unset(self::$log[$i]);
 				$this->hasData = false;
 				return parent::truncate($db);
