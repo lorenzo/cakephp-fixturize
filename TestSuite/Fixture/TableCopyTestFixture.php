@@ -77,6 +77,9 @@ class TableCopyTestFixture extends CakeTestFixture {
 		$this->hasData = true;
 
 		if (!empty($this->records)) {
+			if (empty($this->fields)) {
+				$this->fields = $db->describe($this->table);
+			}
 			return parent::insert($db);
 		}
 
