@@ -31,13 +31,6 @@ class TableCopyTestFixture extends CakeTestFixture {
 	public static $hasData = [];
 
 /**
- * Whether fixtures are being truncated
- *
- * @var bool
- */
-	public static $truncating = false;
-
-/**
  * Holds the list of queries done to the database since the last time
  * it was truncated
  *
@@ -54,6 +47,8 @@ class TableCopyTestFixture extends CakeTestFixture {
 		if (!empty($this->fields)) {
 			return parent::create($db);
 		}
+
+		static::$hasData[$this->table] = false;
 
 		$ReflectionProp = new ReflectionProperty(get_class($db), '_queriesLogMax');
 		$ReflectionProp->setAccessible(true);
@@ -74,8 +69,6 @@ class TableCopyTestFixture extends CakeTestFixture {
  * @return boolean
  */
 	public function insert($db) {
-		self::$truncating = false;
-
 		if (!empty(static::$hasData[$this->table])) {
 			return true;
 		}
@@ -105,24 +98,32 @@ class TableCopyTestFixture extends CakeTestFixture {
  * @return void
  */
 	public function truncate($db) {
-		if (!self::$truncating) {
-			self::$log = $db->getLog();
-			self::$truncating = true;
-		}
+		$ReflectionProp = new ReflectionProperty(get_class($db), '_queriesLog');
+		$ReflectionProp->setAccessible(true);
+		$log = $ReflectionProp->getValue($db);
 
-		foreach (self::$log['log'] as $i => $q) {
-			if (!preg_match('/^UPDATE|^INSERT|^DELETE|^TRUNCATE|^ALTER/i', $q['query'])) {
-				unset(self::$log[$i]);
+		$truncated = false;
+
+		foreach ($log as $i => $q) {
+			if (false === strpos($q['query'], $this->table)) {
 				continue;
 			}
 
-			if (false !== strpos($q['query'], $this->table)) {
-				unset(self::$log[$i]);
-				static::$hasData[$this->table] = false;
-				return parent::truncate($db);
+			unset($log[$i]);
+
+			if ($truncated) {
+				continue;
 			}
+
+			if (!preg_match('/^UPDATE|^INSERT|^DELETE|^TRUNCATE|^ALTER/i', $q['query'])) {
+				continue;
+			}
+
+			static::$hasData[$this->table] = false;
+			$truncated = parent::truncate($db);
 		}
 
+		$ReflectionProp->setValue($db, $log);
 		return true;
 	}
 
@@ -137,8 +138,9 @@ class TableCopyTestFixture extends CakeTestFixture {
 		try {
 			$db->execute('DROP TABLE ' . $db->fullTableName($this->table), array('log' => false));
 			$this->created = array_diff($this->created, array($db->configKeyName));
+			static::$hasData[$this->table] = false;
 		} catch (Exception $e) {
-			CakeLog::write('error', 'Failed to drop table: ' . $db->fullTableName($this->table));
+			CakeLog::write('error', 'Failed to drop table: ' . $db->fullTableName($this->table) . ' - ' . $e->getMessage());
 			return false;
 		}
 
