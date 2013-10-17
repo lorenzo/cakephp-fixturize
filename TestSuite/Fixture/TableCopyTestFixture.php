@@ -75,6 +75,7 @@ class TableCopyTestFixture extends CakeTestFixture {
  */
 	public function insert($db) {
 		self::$truncating = false;
+
 		if ($this->hasData) {
 			return true;
 		}
@@ -85,6 +86,7 @@ class TableCopyTestFixture extends CakeTestFixture {
 			if (empty($this->fields)) {
 				$this->fields = $db->describe($this->table);
 			}
+
 			return parent::insert($db);
 		}
 
@@ -109,12 +111,12 @@ class TableCopyTestFixture extends CakeTestFixture {
 		}
 
 		foreach (self::$log['log'] as $i => $q) {
-			if (!preg_match('/^UPDATE|^INSERT|^DELETE/i', $q['query'])) {
+			if (!preg_match('/^UPDATE|^INSERT|^DELETE|^TRUNCATE|^ALTER/i', $q['query'])) {
 				unset(self::$log[$i]);
 				continue;
 			}
 
-			if (strpos($q['query'], $this->table)) {
+			if (false !== strpos($q['query'], $this->table)) {
 				unset(self::$log[$i]);
 				$this->hasData = false;
 				return parent::truncate($db);
@@ -131,13 +133,15 @@ class TableCopyTestFixture extends CakeTestFixture {
  */
 	public function drop($db) {
 		$this->Schema->build(array($this->table => $this->fields));
-		try {
 
+		try {
 			$db->execute('DROP TABLE ' . $db->fullTableName($this->table), array('log' => false));
 			$this->created = array_diff($this->created, array($db->configKeyName));
 		} catch (Exception $e) {
+			CakeLog::write('error', 'Failed to drop table: ' . $db->fullTableName($this->table));
 			return false;
 		}
+
 		return true;
 	}
 
