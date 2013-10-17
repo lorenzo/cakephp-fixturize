@@ -54,6 +54,11 @@ class TableCopyTestFixture extends CakeTestFixture {
 		if (!empty($this->fields)) {
 			return parent::create($db);
 		}
+
+		$ReflectionProp = new ReflectionProperty(get_class($db), '_queriesLogMax');
+		$ReflectionProp->setAccessible(true);
+		$ReflectionProp->setValue($db, PHP_INT_MAX);
+
 		$source = ConnectionManager::getDataSource($this->sourceConfig);
 		$sourceTable = $source->fullTableName($this->table);
 		$query = sprintf('CREATE TABLE IF NOT EXISTS %s like %s', $db->fullTableName($this->table), $sourceTable);
@@ -102,11 +107,13 @@ class TableCopyTestFixture extends CakeTestFixture {
 			self::$log = $db->getLog();
 			self::$truncating = true;
 		}
+
 		foreach (self::$log['log'] as $i => $q) {
 			if (!preg_match('/^UPDATE|^INSERT|^DELETE/i', $q['query'])) {
 				unset(self::$log[$i]);
 				continue;
 			}
+
 			if (strpos($q['query'], $this->table)) {
 				unset(self::$log[$i]);
 				$this->hasData = false;
