@@ -28,7 +28,7 @@ class TableCopyTestFixture extends CakeTestFixture {
  *
  * @var boolean
  */
-	public $hasData = false;
+	public static $hasData = [];
 
 /**
  * Whether fixtures are being truncated
@@ -76,11 +76,11 @@ class TableCopyTestFixture extends CakeTestFixture {
 	public function insert($db) {
 		self::$truncating = false;
 
-		if ($this->hasData) {
+		if (!empty(static::$hasData[$this->table])) {
 			return true;
 		}
 
-		$this->hasData = true;
+		static::$hasData[$this->table] = true;
 
 		if (!empty($this->records)) {
 			if (empty($this->fields)) {
@@ -118,7 +118,7 @@ class TableCopyTestFixture extends CakeTestFixture {
 
 			if (false !== strpos($q['query'], $this->table)) {
 				unset(self::$log[$i]);
-				$this->hasData = false;
+				static::$hasData[$this->table] = false;
 				return parent::truncate($db);
 			}
 		}
