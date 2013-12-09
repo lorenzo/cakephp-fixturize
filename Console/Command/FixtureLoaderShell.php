@@ -43,7 +43,11 @@ class FixtureLoaderShell extends AppShell {
 	public function findAllFixtureFiles() {
 		$basePath = APP;
 		if (is_string($this->params['plugin'])) {
-			$basePath = CakePlugin::path($this->params['plugin']);
+			if (CakePlugin::loaded()) {
+				$basePath = CakePlugin::path($this->params['plugin']);
+			} else {
+				$this->err(__('Plugin %s is not loaded or does not exist!', $this->params['plugin']));
+			}
 		}
 
 		$Folder = new Folder($basePath . 'Test' . DS . 'Fixture');
@@ -81,7 +85,7 @@ class FixtureLoaderShell extends AppShell {
 			))
 			->addOption('plugin', array(
 				'short' => 'p',
-				'help' => 'Datasource to use',
+				'help' => 'Plugin to load fixtures from when not specifing fixtures manually',
 				'default' => false
 			));
 	}
