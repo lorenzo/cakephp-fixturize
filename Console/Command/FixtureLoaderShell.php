@@ -1,7 +1,8 @@
 <?php
-App::uses('FixturizeFixtureManager', 'TestSuite/Fixture');
+App::uses('FixturizeFixtureManager', 'Fixturize.TestSuite/Fixture');
 App::uses('CakeTestFixture', 'TestSuite/Fixture');
 App::uses('ConnectionManager', 'Model');
+App::uses('Folder', 'Utility');
 
 /**
  * Fixture Loader shell
@@ -26,8 +27,38 @@ class FixtureLoaderShell extends AppShell {
  * @return void
  */
 	public function main() {
+		if (empty($this->args[0])) {
+			$this->args[0] = $this->findAllFixtureFiles();
+		}
+
 		$CakeFixtureManager = new FixturizeFixtureManager();
 		$CakeFixtureManager->loadAllFixtures($this->params['datasource'], explode(',', $this->args[0]));
+	}
+
+/**
+ * Loads all fixture files for app or plugin
+ *
+ * @return array
+ */
+	public function findAllFixtureFiles() {
+		$basePath = APP;
+		if (is_string($this->params['plugin'])) {
+			$basePath = CakePlugin::path($this->params['plugin']);
+		}
+
+		$Folder = new Folder($basePath . 'Test' . DS . 'Fixture');
+		$folderContent = $Folder->read();
+		$fixtures = '';
+
+		if (!empty($folderContent[1])) {
+			foreach ($folderContent[1] as $file) {
+				if (substr($file, -11) === 'Fixture.php') {
+					$fixtures .= 'app.' . Inflector::underscore(substr($file, 0, - 11)) . ',';
+				}
+			}
+		}
+
+		return substr($fixtures, 0, -1);
 	}
 
 /**
@@ -41,12 +72,17 @@ class FixtureLoaderShell extends AppShell {
 			->description('Load test fixtures into any datasource you want')
 			->addArgument('fixtures', array(
 				'help' => 'A comma separated list of fixtures to use (Format is same as $fixtures property in CakeTest classes',
-				'required' => true
+				'required' => false
 			))
 			->addOption('datasource', array(
 				'short' => 'd',
 				'help' => 'Datasource to use',
 				'default' => 'default'
+			))
+			->addOption('plugin', array(
+				'short' => 'p',
+				'help' => 'Datasource to use',
+				'default' => false
 			));
 	}
 }
