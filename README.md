@@ -66,7 +66,9 @@ In your plugin directory type:
 
 Enable the plugin your `app/Config/bootstrap.php` file:
 
+```php
     CakePlugin::load('Fixturize');
+```
 
 ## Usage
 
@@ -81,6 +83,16 @@ then execute this command in the console:
 	./Console/cake Fixturize.fixture_loader app.event,app.tag,app.category --datasource test
 
 It will load the comma separated list of fixtures schema and data into the datasource 'test'.
+
+### Load all fixtures from app or plugin
+
+Instead of typing all the fixtures you need you can also simply not specify and, the shell will load all fixtures from the app then
+
+	./Console/cake Fixturize.fixture_loader --datasource test
+
+To load all fixtures from a plugin you'll have to specify the plugin as well
+
+	./Console/cake Fixturize.fixture_loader --plugin SomePluginName --datasource test
 
 ### Loading your fixtures from SQL files
 
@@ -97,6 +109,7 @@ Files should be stored in `app/Test/Fixture/SQL/` or `app/YourPlugin/Test/Fixtur
 
 Example:
 
+```php
 	<?php
 
 	App::uses('SQLTestFixture', 'Fixturize.TestSuite/Fixture');
@@ -111,6 +124,7 @@ Example:
 
 		public $file = 'overriding_file_name.sql'; // By default it would use categories.sql
 	}
+```
 
 And that's all you need!
 
@@ -121,6 +135,7 @@ data directly from it before running each test. This is also considerably faster
 
 This requires creating a new database config in `app/Config/database.php` to connect to the seed database (the one containing the test data):
 
+```php
 	public $test_seed = array(
 		'datasource' => 'Database/Mysql',
 		'persistent' => false,
@@ -131,9 +146,11 @@ This requires creating a new database config in `app/Config/database.php` to con
 		'prefix' => '',
 		'encoding' => 'utf8',
 	);
+```
 
 This is an example of using the import data fixture class:
 
+```php
 	<?php
 
 	App::uses('TableCopyTestFixture', 'Fixturize.TestSuite/Fixture');
@@ -145,5 +162,6 @@ This is an example of using the import data fixture class:
 	class CategoryFixture extends TableCopyTestFixture {
 
 	}
+```
 
 Yes, as easy as that!
