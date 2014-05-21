@@ -101,19 +101,19 @@ class TableCopyTestFixture extends CakeTestFixture {
 		$ReflectionProp = new ReflectionProperty(get_class($db), '_queriesLog');
 		$ReflectionProp->setAccessible(true);
 		$log = $ReflectionProp->getValue($db);
-
 		$truncated = false;
 
 		foreach ($log as $i => $q) {
-			if (false === strpos($q['query'], $this->table)) {
+			if (in_array($q['query'], ['COMMIT', 'BEGIN', 'ROLLBACK'])) {
+				unset($log[$i]);
+				continue;
+			}
+
+			if (false === stripos($q['query'], $db->fullTableName($this->table))) {
 				continue;
 			}
 
 			unset($log[$i]);
-
-			if ($truncated) {
-				continue;
-			}
 
 			if (!preg_match('/^UPDATE|^INSERT|^DELETE|^TRUNCATE|^ALTER/i', $q['query'])) {
 				continue;
