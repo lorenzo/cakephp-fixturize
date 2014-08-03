@@ -16,14 +16,14 @@ App::uses('CakeTestFixture', 'TestSuite/Fixture');
  * By default SQL files are loaded from [APP|PLUGIN]/Test/Fixture/SQL/
  *
  */
-class SQLTestFixture extends CakeTestFixture {
-
+class SQLTestFixture extends CakeTestFixture
+{
 /**
  * The plugin where the .sql file is located
  *
  * @var string
  */
-	public $plugin;
+    public $plugin;
 
 /**
  * The sql file basename, you can override this property
@@ -33,31 +33,35 @@ class SQLTestFixture extends CakeTestFixture {
  *
  * @var string
  */
-	public $file;
+    public $file;
 
 /**
  * Initializes this fixture class
  *
  * @return boolean
  */
-	public function init() {
-		if (empty($this->file)) {
-			$this->file = Inflector::tableize($this->name) . '.sql';
-		}
-		return parent::init();
-	}
+    public function init()
+    {
+        if (empty($this->file)) {
+            $this->file = Inflector::tableize($this->name) . '.sql';
+        }
+
+        return parent::init();
+    }
 
 /**
  * Initializes this fixture class
  *
  * @return boolean
  */
-	public function create($db) {
-		if (!empty($this->fields)) {
-			return parent::create($db);
-		}
-		return (bool)$db->execute(file_get_contents($this->_getFilePath()));
-	}
+    public function create($db)
+    {
+        if (!empty($this->fields)) {
+            return parent::create($db);
+        }
+
+        return (bool) $db->execute(file_get_contents($this->_getFilePath()));
+    }
 
 /**
  * Inserts records in the database
@@ -65,32 +69,36 @@ class SQLTestFixture extends CakeTestFixture {
  * @param DboSource $db
  * @return boolean
  */
-	public function insert($db) {
-		if (isset($this->_insert)) {
-			return true;
-		}
-		if (!empty($this->records)) {
-			return parent::insert($db);
-		}
-		return (bool)$db->execute(file_get_contents($this->_getFilePath()));
-	}
+    public function insert($db)
+    {
+        if (isset($this->_insert)) {
+            return true;
+        }
+        if (!empty($this->records)) {
+            return parent::insert($db);
+        }
+
+        return (bool) $db->execute(file_get_contents($this->_getFilePath()));
+    }
 
 /**
  * Returns the full path where the SQL file is located.
  *
  * @return string
  */
-	protected function _getFilePath() {
-		$path = TESTS;
-		if (!empty($this->plugin)) {
-			$path = CakePlugin::path($this->plugin) . 'Test' . DS;
-		}
-		$path .= 'Fixture' . DS . 'SQL' . DS . $this->file;
+    protected function _getFilePath()
+    {
+        $path = TESTS;
+        if (!empty($this->plugin)) {
+            $path = CakePlugin::path($this->plugin) . 'Test' . DS;
+        }
+        $path .= 'Fixture' . DS . 'SQL' . DS . $this->file;
 
-		if (!is_file($path)) {
-			throw new CakeException('Could not find file: ' . $path);
-		}
-		return $path;
-	}
+        if (!is_file($path)) {
+            throw new CakeException('Could not find file: ' . $path);
+        }
+
+        return $path;
+    }
 
 }
