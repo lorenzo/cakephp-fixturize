@@ -14,21 +14,21 @@ App::uses('CakeTestFixture', 'TestSuite/Fixture');
  * tests depending on the presence of INSERT, UPDATE or DELETE statements
  *
  */
-class TableCopyTestFixture extends CakeTestFixture {
-
+class TableCopyTestFixture extends CakeTestFixture
+{
 /**
  * The database config name from which the table will be copied
  *
  * @var string
  */
-	public $sourceConfig = 'test_seed';
+    public $sourceConfig = 'test_seed';
 
 /**
  * Whether any data was inserted on this fixture or not
  *
  * @var boolean
  */
-	public static $hasData = [];
+    public static $hasData = [];
 
 /**
  * Holds the list of queries done to the database since the last time
@@ -36,31 +36,33 @@ class TableCopyTestFixture extends CakeTestFixture {
  *
  * @var string
  */
-	public static $log = array();
+    public static $log = array();
 
 /**
  * Initializes this fixture class
  *
  * @return boolean
  */
-	public function create($db) {
-		if (!empty($this->fields)) {
-			return parent::create($db);
-		}
+    public function create($db)
+    {
+        if (!empty($this->fields)) {
+            return parent::create($db);
+        }
 
-		static::$hasData[$this->table] = false;
+        static::$hasData[$this->table] = false;
 
-		$ReflectionProp = new ReflectionProperty(get_class($db), '_queriesLogMax');
-		$ReflectionProp->setAccessible(true);
-		$ReflectionProp->setValue($db, PHP_INT_MAX);
+        $ReflectionProp = new ReflectionProperty(get_class($db), '_queriesLogMax');
+        $ReflectionProp->setAccessible(true);
+        $ReflectionProp->setValue($db, PHP_INT_MAX);
 
-		$source = ConnectionManager::getDataSource($this->sourceConfig);
-		$sourceTable = $source->fullTableName($this->table);
-		$query = sprintf('CREATE TABLE IF NOT EXISTS %s like %s', $db->fullTableName($this->table), $sourceTable);
-		$db->execute($query, array('log' => false));
-		$this->created[] = $db->configKeyName;
-		return true;
-	}
+        $source = ConnectionManager::getDataSource($this->sourceConfig);
+        $sourceTable = $source->fullTableName($this->table);
+        $query = sprintf('CREATE TABLE IF NOT EXISTS %s like %s', $db->fullTableName($this->table), $sourceTable);
+        $db->execute($query, array('log' => false));
+        $this->created[] = $db->configKeyName;
+
+        return true;
+    }
 
 /**
  * Inserts records in the database
@@ -68,27 +70,29 @@ class TableCopyTestFixture extends CakeTestFixture {
  * @param DboSource $db
  * @return boolean
  */
-	public function insert($db) {
-		if (!empty(static::$hasData[$this->table])) {
-			return true;
-		}
+    public function insert($db)
+    {
+        if (!empty(static::$hasData[$this->table])) {
+            return true;
+        }
 
-		static::$hasData[$this->table] = true;
+        static::$hasData[$this->table] = true;
 
-		if (!empty($this->records)) {
-			if (empty($this->fields)) {
-				$this->fields = $db->describe($this->table);
-			}
+        if (!empty($this->records)) {
+            if (empty($this->fields)) {
+                $this->fields = $db->describe($this->table);
+            }
 
-			return parent::insert($db);
-		}
+            return parent::insert($db);
+        }
 
-		$source = ConnectionManager::getDataSource($this->sourceConfig);
-		$sourceTable = $source->fullTableName($this->table);
-		$query = sprintf('INSERT INTO %s SELECT * FROM %s', $db->fullTableName($this->table), $sourceTable);
-		$db->execute($query, array('log' => false));
-		return true;
-	}
+        $source = ConnectionManager::getDataSource($this->sourceConfig);
+        $sourceTable = $source->fullTableName($this->table);
+        $query = sprintf('INSERT INTO %s SELECT * FROM %s', $db->fullTableName($this->table), $sourceTable);
+        $db->execute($query, array('log' => false));
+
+        return true;
+    }
 
 /**
  * Deletes all table information. This will be done conditionally
@@ -97,54 +101,58 @@ class TableCopyTestFixture extends CakeTestFixture {
  *
  * @return void
  */
-	public function truncate($db) {
-		$ReflectionProp = new ReflectionProperty(get_class($db), '_queriesLog');
-		$ReflectionProp->setAccessible(true);
-		$log = $ReflectionProp->getValue($db);
-		$truncated = false;
+    public function truncate($db)
+    {
+        $ReflectionProp = new ReflectionProperty(get_class($db), '_queriesLog');
+        $ReflectionProp->setAccessible(true);
+        $log = $ReflectionProp->getValue($db);
+        $truncated = false;
 
-		foreach ($log as $i => $q) {
-			if (in_array($q['query'], ['COMMIT', 'BEGIN', 'ROLLBACK'])) {
-				unset($log[$i]);
-				continue;
-			}
+        foreach ($log as $i => $q) {
+            if (in_array($q['query'], ['COMMIT', 'BEGIN', 'ROLLBACK'])) {
+                unset($log[$i]);
+                continue;
+            }
 
-			if (false === stripos($q['query'], $db->fullTableName($this->table))) {
-				continue;
-			}
+            if (false === stripos($q['query'], $db->fullTableName($this->table))) {
+                continue;
+            }
 
-			unset($log[$i]);
+            unset($log[$i]);
 
-			if (!preg_match('/^UPDATE|^INSERT|^DELETE|^TRUNCATE|^ALTER/i', $q['query'])) {
-				continue;
-			}
+            if (!preg_match('/^UPDATE|^INSERT|^DELETE|^TRUNCATE|^ALTER/i', $q['query'])) {
+                continue;
+            }
 
-			static::$hasData[$this->table] = false;
-			$truncated = parent::truncate($db);
-		}
+            static::$hasData[$this->table] = false;
+            $truncated = parent::truncate($db);
+        }
 
-		$ReflectionProp->setValue($db, $log);
-		return true;
-	}
+        $ReflectionProp->setValue($db, $log);
+
+        return true;
+    }
 
 /**
  * Drops the table from the test datasource
  *
  * @return void
  */
-	public function drop($db) {
-		$this->Schema->build(array($this->table => $this->fields));
+    public function drop($db)
+    {
+        $this->Schema->build(array($this->table => $this->fields));
 
-		try {
-			$db->execute('DROP TABLE ' . $db->fullTableName($this->table), array('log' => false));
-			$this->created = array_diff($this->created, array($db->configKeyName));
-			static::$hasData[$this->table] = false;
-		} catch (Exception $e) {
-			CakeLog::write('error', 'Failed to drop table: ' . $db->fullTableName($this->table) . ' - ' . $e->getMessage());
-			return false;
-		}
+        try {
+            $db->execute('DROP TABLE ' . $db->fullTableName($this->table), array('log' => false));
+            $this->created = array_diff($this->created, array($db->configKeyName));
+            static::$hasData[$this->table] = false;
+        } catch (Exception $e) {
+            CakeLog::write('error', 'Failed to drop table: ' . $db->fullTableName($this->table) . ' - ' . $e->getMessage());
 
-		return true;
-	}
+            return false;
+        }
+
+        return true;
+    }
 
 }

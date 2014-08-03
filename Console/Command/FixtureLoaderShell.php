@@ -17,8 +17,8 @@ App::uses('Folder', 'Utility');
  *
  * @author Christian Winther (https://github.com/Jippi)
  */
-class FixtureLoaderShell extends AppShell {
-
+class FixtureLoaderShell extends AppShell
+{
 /**
  * The one and only shell action
  *
@@ -26,67 +26,71 @@ class FixtureLoaderShell extends AppShell {
  *
  * @return void
  */
-	public function main() {
-		if (empty($this->args[0])) {
-			$this->args[0] = $this->findAllFixtureFiles();
-		}
+    public function main()
+    {
+        if (empty($this->args[0])) {
+            $this->args[0] = $this->findAllFixtureFiles();
+        }
 
-		$CakeFixtureManager = new FixturizeFixtureManager();
-		$CakeFixtureManager->loadAllFixtures($this->params['datasource'], explode(',', $this->args[0]));
-	}
+        $CakeFixtureManager = new FixturizeFixtureManager();
+        $CakeFixtureManager->loadAllFixtures($this->params['datasource'], explode(',', $this->args[0]));
+    }
 
 /**
  * Loads all fixture files for app or plugin
  *
  * @return array
  */
-	public function findAllFixtureFiles() {
-		$basePath = APP;
-		if (is_string($this->params['plugin'])) {
-			if (CakePlugin::loaded()) {
-				$basePath = CakePlugin::path($this->params['plugin']);
-			} else {
-				$this->err(__('Plugin %s is not loaded or does not exist!', $this->params['plugin']));
-			}
-		}
+    public function findAllFixtureFiles()
+    {
+        $basePath = APP;
+        if (is_string($this->params['plugin'])) {
+            if (CakePlugin::loaded()) {
+                $basePath = CakePlugin::path($this->params['plugin']);
+            } else {
+                $this->err(__('Plugin %s is not loaded or does not exist!', $this->params['plugin']));
+            }
+        }
 
-		$Folder = new Folder($basePath . 'Test' . DS . 'Fixture');
-		$folderContent = $Folder->read();
-		$fixtures = '';
+        $Folder = new Folder($basePath . 'Test' . DS . 'Fixture');
+        $folderContent = $Folder->read();
+        $fixtures = '';
 
-		if (!empty($folderContent[1])) {
-			foreach ($folderContent[1] as $file) {
-				if (substr($file, -11) === 'Fixture.php') {
-					$fixtures .= 'app.' . Inflector::underscore(substr($file, 0, - 11)) . ',';
-				}
-			}
-		}
+        if (!empty($folderContent[1])) {
+            foreach ($folderContent[1] as $file) {
+                if (substr($file, -11) === 'Fixture.php') {
+                    $fixtures .= 'app.' . Inflector::underscore(substr($file, 0, - 11)) . ',';
+                }
+            }
+        }
 
-		return substr($fixtures, 0, -1);
-	}
+        return substr($fixtures, 0, -1);
+    }
 
 /**
  * get the option parser.
  *
  * @return void
  */
-	public function getOptionParser() {
-		$parser = parent::getOptionParser();
-		return $parser
-			->description('Load test fixtures into any datasource you want')
-			->addArgument('fixtures', array(
-				'help' => 'A comma separated list of fixtures to use (Format is same as $fixtures property in CakeTest classes',
-				'required' => false
-			))
-			->addOption('datasource', array(
-				'short' => 'd',
-				'help' => 'Datasource to use',
-				'default' => 'default'
-			))
-			->addOption('plugin', array(
-				'short' => 'p',
-				'help' => 'Plugin to load fixtures from when not specifing fixtures manually',
-				'default' => false
-			));
-	}
+    public function getOptionParser()
+    {
+        $parser = parent::getOptionParser();
+
+        return $parser
+            ->description('Load test fixtures into any datasource you want')
+            ->addArgument('fixtures', array(
+                'help' => 'A comma separated list of fixtures to use (Format is same as $fixtures property in CakeTest classes',
+                'required' => false
+            ))
+            ->addOption('datasource', array(
+                'short' => 'd',
+                'help' => 'Datasource to use',
+                'default' => 'default'
+            ))
+            ->addOption('plugin', array(
+                'short' => 'p',
+                'help' => 'Plugin to load fixtures from when not specifing fixtures manually',
+                'default' => false
+            ));
+    }
 }
