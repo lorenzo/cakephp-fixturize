@@ -55,6 +55,10 @@ class TableCopyTestFixture extends CakeTestFixture {
 		$ReflectionProp->setValue($db, PHP_INT_MAX);
 
 		$source = ConnectionManager::getDataSource($this->sourceConfig);
+		$continue = $this->validateDb($source, $db);
+		if (!$continue) {
+			return false;
+		}
 		$sourceTable = $source->fullTableName($this->table);
 		$query = sprintf('CREATE TABLE IF NOT EXISTS %s like %s', $db->fullTableName($this->table), $sourceTable);
 		$db->execute($query, array('log' => false));
@@ -84,8 +88,14 @@ class TableCopyTestFixture extends CakeTestFixture {
 		}
 
 		$source = ConnectionManager::getDataSource($this->sourceConfig);
+
+		$continue = $this->validateDb($source, $db);
+		if (!$continue) {
+			return false;
+		}
+		
 		$sourceTable = $source->fullTableName($this->table);
-		$query = sprintf('INSERT INTO %s SELECT * FROM %s', $db->fullTableName($this->table), $sourceTable);
+		$query = sprintf('INSERT INTO %s SELECT * FROM %s', $db->fullTableName($this->table), $sourceTable);	
 		$db->execute($query, array('log' => false));
 		return true;
 	}
@@ -135,6 +145,13 @@ class TableCopyTestFixture extends CakeTestFixture {
 	public function drop($db) {
 		$this->Schema->build(array($this->table => $this->fields));
 
+		$source = ConnectionManager::getDataSource($this->sourceConfig);
+
+		$continue = $this->validateDb($source, $db);
+		if (!$continue) {
+			return false;
+		}
+
 		try {
 			$db->execute('DROP TABLE ' . $db->fullTableName($this->table), array('log' => false));
 			$this->created = array_diff($this->created, array($db->configKeyName));
@@ -144,6 +161,23 @@ class TableCopyTestFixture extends CakeTestFixture {
 			return false;
 		}
 
+		return true;
+	}
+
+/**
+ * Ensures that the sourceDb is different from testDb
+ *
+ * @return boolean False when sourceDb is same as testDb
+ */
+	public function validateDb($sourceDb, $testDb) {
+		$testDbName = $testDb->config['database'];
+		$sourceDbName = $sourceDb->config['database'];
+		$testDbHost = $testDb->config['host'];
+		$sourceDbHost = $sourceDb->config['host'];
+		if ($testDbName == $sourceDbName && $testDbHost == $sourceDbHost) {
+			CakeLog::write('error', "You use the same database for both the test_seed and the test database i.e. $sourceDbHost - $sourceDbName");
+			return false;
+		}
 		return true;
 	}
 
