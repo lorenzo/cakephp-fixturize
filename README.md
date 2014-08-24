@@ -148,6 +148,12 @@ This requires creating a new database config in `app/Config/database.php` to con
 	);
 ```
 
+**Warning**
+
+Please ensure that you also have a `$test` database config that is pointing to a separate database.
+
+`$test_seed` contains the seed data whereas `$test` is an empty database where the CakePHP Test logic will use to run queries on.
+
 This is an example of using the import data fixture class:
 
 ```php
