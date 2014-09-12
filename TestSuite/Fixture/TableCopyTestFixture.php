@@ -1,5 +1,4 @@
 <?php
-
 App::uses('CakeTestFixture', 'TestSuite/Fixture');
 
 /**
@@ -7,11 +6,11 @@ App::uses('CakeTestFixture', 'TestSuite/Fixture');
  * database. This is particularly helpful when you need big datasets to support your
  * testing.
  *
- * This also alleviates the strain of maintaining php based fixtures as you can use any
+ * This also alleviates the strain of maintaining PHP based fixtures as you can use any
  * database migration tool to keep it up to date.
  *
- * Additionally it will inspect the database log and conditionally drop tables in between
- * tests depending on the presence of INSERT, UPDATE or DELETE statements
+ * Additionally it will inspect the database table hashes and detect any change to the underlying
+ * data set and automatically re-create the table and data
  *
  */
 class TableCopyTestFixture extends CakeTestFixture {
@@ -24,23 +23,16 @@ class TableCopyTestFixture extends CakeTestFixture {
 	public $sourceConfig = 'test_seed';
 
 /**
- * Whether any data was inserted on this fixture or not
+ * List of table hashes
  *
- * @var boolean
+ * @var array
  */
-	public static $hasData = [];
-
-/**
- * Holds the list of queries done to the database since the last time
- * it was truncated
- *
- * @var string
- */
-	public static $log = array();
+	public static $_tableHashes = [];
 
 /**
  * Initializes this fixture class
  *
+ * @param DboSource $db
  * @return boolean
  */
 	public function create($db) {
@@ -48,15 +40,9 @@ class TableCopyTestFixture extends CakeTestFixture {
 			return parent::create($db);
 		}
 
-		static::$hasData[$this->table] = false;
-
-		$ReflectionProp = new ReflectionProperty(get_class($db), '_queriesLogMax');
-		$ReflectionProp->setAccessible(true);
-		$ReflectionProp->setValue($db, PHP_INT_MAX);
-
 		$source = ConnectionManager::getDataSource($this->sourceConfig);
 		$sourceTable = $source->fullTableName($this->table);
-		$query = sprintf('CREATE TABLE IF NOT EXISTS %s like %s', $db->fullTableName($this->table), $sourceTable);
+		$query = sprintf('CREATE TABLE IF NOT EXISTS %s LIKE %s', $db->fullTableName($this->table), $sourceTable);
 		$db->execute($query, array('log' => false));
 		$this->created[] = $db->configKeyName;
 		return true;
@@ -65,86 +51,97 @@ class TableCopyTestFixture extends CakeTestFixture {
 /**
  * Inserts records in the database
  *
+ * This will only happen if the underlying table is modified in any way or
+ * does not exist with a hash yet.
+ *
  * @param DboSource $db
  * @return boolean
  */
 	public function insert($db) {
-		if (!empty(static::$hasData[$this->table])) {
+		if ($this->_tableUnmodified($db)) {
 			return true;
 		}
-
-		static::$hasData[$this->table] = true;
 
 		if (!empty($this->records)) {
 			if (empty($this->fields)) {
 				$this->fields = $db->describe($this->table);
 			}
 
-			return parent::insert($db);
+			$result = parent::insert($db);
+			static::$_tableHashes[$this->table] = $this->_hash($db);
+			return $result;
 		}
 
 		$source = ConnectionManager::getDataSource($this->sourceConfig);
 		$sourceTable = $source->fullTableName($this->table);
+
 		$query = sprintf('INSERT INTO %s SELECT * FROM %s', $db->fullTableName($this->table), $sourceTable);
-		$db->execute($query, array('log' => false));
+		$db->execute($query, ['log' => false]);
+
+		static::$_tableHashes[$this->table] = $this->_hash($db);
+
 		return true;
 	}
 
 /**
- * Deletes all table information. This will be done conditionally
- * depending on the presence of CREATE, INSERT or UPDATE statements
- * in the database log
+ * Deletes all table information.
  *
+ * This will only happen if the underlying table is modified in any way
+ *
+ * @param DboSource $db
  * @return void
  */
 	public function truncate($db) {
-		$ReflectionProp = new ReflectionProperty(get_class($db), '_queriesLog');
-		$ReflectionProp->setAccessible(true);
-		$log = $ReflectionProp->getValue($db);
-		$truncated = false;
-
-		foreach ($log as $i => $q) {
-			if (in_array($q['query'], ['COMMIT', 'BEGIN', 'ROLLBACK'])) {
-				unset($log[$i]);
-				continue;
-			}
-
-			if (false === stripos($q['query'], $db->fullTableName($this->table))) {
-				continue;
-			}
-
-			unset($log[$i]);
-
-			if (!preg_match('/^UPDATE|^INSERT|^DELETE|^TRUNCATE|^ALTER/i', $q['query'])) {
-				continue;
-			}
-
-			static::$hasData[$this->table] = false;
-			$truncated = parent::truncate($db);
+		if ($this->_tableUnmodified($db)) {
+			return true;
 		}
 
-		$ReflectionProp->setValue($db, $log);
-		return true;
+		return parent::truncate($db);
 	}
 
 /**
  * Drops the table from the test datasource
  *
+ * @param DboSource $db
  * @return void
  */
 	public function drop($db) {
-		$this->Schema->build(array($this->table => $this->fields));
+		unset(static::$_tableHashes[$this->table]);
+		return parent::drop($db);
+	}
 
-		try {
-			$db->execute('DROP TABLE ' . $db->fullTableName($this->table), array('log' => false));
-			$this->created = array_diff($this->created, array($db->configKeyName));
-			static::$hasData[$this->table] = false;
-		} catch (Exception $e) {
-			CakeLog::write('error', 'Failed to drop table: ' . $db->fullTableName($this->table) . ' - ' . $e->getMessage());
+/**
+ * Test if a table is modified or not
+ *
+ * If there is no known hash, treat it as being modified
+ *
+ * In all other cases where the initial and current hash differs, assume
+ * the table has changed
+ *
+ * @param DboSource $db
+ * @return boolean
+ */
+	protected function _tableUnmodified($db) {
+		if (empty(static::$_tableHashes[$this->table])) {
 			return false;
 		}
 
-		return true;
+		if (static::$_tableHashes[$this->table] === $this->_hash($db)) {
+			return true;
+		}
+
+		return false;
+	}
+
+/**
+ * Get the table hash from MySQL for a specific table
+ *
+ * @param DboSource $db
+ * @return string
+ */
+	protected function _hash($db) {
+		$sourceHash = $db->execute(sprintf('CHECKSUM TABLE %s', $this->table), ['log' => false]);
+		return $sourceHash->fetch()->Checksum;
 	}
 
 }
