@@ -42,8 +42,13 @@ class TableCopyTestFixture extends CakeTestFixture {
 
 		$source = ConnectionManager::getDataSource($this->sourceConfig);
 		$sourceTable = $source->fullTableName($this->table);
-		$query = sprintf('CREATE TABLE IF NOT EXISTS %s LIKE %s', $db->fullTableName($this->table), $sourceTable);
-		$db->execute($query, array('log' => false));
+
+		$query = sprintf('DROP TABLE IF EXISTS %s', $db->fullTableName($this->table));
+		$db->execute($query, ['log' => false]);
+
+		$query = sprintf('CREATE TABLE %s LIKE %s', $db->fullTableName($this->table), $sourceTable);
+		$db->execute($query, ['log' => false]);
+
 		$this->created[] = $db->configKeyName;
 		return true;
 	}
@@ -107,6 +112,7 @@ class TableCopyTestFixture extends CakeTestFixture {
  */
 	public function drop($db) {
 		unset(static::$_tableHashes[$this->table]);
+
 		return parent::drop($db);
 	}
 
