@@ -107,22 +107,7 @@ class TableCopyTestFixture extends CakeTestFixture {
  */
 	public function drop($db) {
 		unset(static::$_tableHashes[$this->table]);
-
-		if (!empty($this->records)) {
-			return parent::drop($db);
-		}
-
-		$this->Schema->build(array($this->table => $this->fields));
-
-		try {
-			$db->execute('DROP TABLE ' . $db->fullTableName($this->table), array('log' => false));
-			$this->created = array_diff($this->created, array($db->configKeyName));
-		} catch (Exception $e) {
-			CakeLog::write('error', 'Failed to drop table: ' . $db->fullTableName($this->table) . ' - ' . $e->getMessage());
-			return false;
-		}
-
-		return true;
+		return parent::drop($db);
 	}
 
 /**
