@@ -80,6 +80,9 @@ class TableCopyTestFixture extends CakeTestFixture {
 		$source = ConnectionManager::getDataSource($this->sourceConfig);
 		$sourceTable = $source->fullTableName($this->table);
 
+		$query = sprintf('TRUNCATE TABLE %s', $db->fullTableName($this->table));
+		$db->execute($query, ['log' => false]);
+
 		$query = sprintf('INSERT INTO %s SELECT * FROM %s', $db->fullTableName($this->table), $sourceTable);
 		$db->execute($query, ['log' => false]);
 
