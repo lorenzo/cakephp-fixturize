@@ -149,7 +149,7 @@ class TableCopyTestFixture extends CakeTestFixture {
  * @return string
  */
 	protected function _hash($db) {
-		$sourceHash = $db->execute(sprintf('CHECKSUM TABLE %s', $this->table), ['log' => false]);
+		$sourceHash = $db->execute(sprintf('CHECKSUM TABLE `%s`', $this->table), ['log' => false]);
 		return $sourceHash->fetch()->Checksum;
 	}
 
