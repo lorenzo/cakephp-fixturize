@@ -43,7 +43,7 @@ Add the following to your composer.json in the corresponding configuration keys:
 
 _[Manual]_
 
-* Download this: [https://github.com/lorenzo/cakephp-fixturize/zipball/master](https://github.com/nodesagency/cakephp-email-queue/zipball/master)
+* Download this: [https://github.com/lorenzo/cakephp-fixturize/zipball/master](https://github.com/lorenzo/cakephp-fixturize/zipball/master)
 * Unzip that download.
 * Copy the resulting folder to `app/Plugin`
 * Rename the folder you just copied to `Fixturize`
