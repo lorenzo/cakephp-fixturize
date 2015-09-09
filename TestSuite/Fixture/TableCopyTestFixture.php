@@ -149,8 +149,14 @@ class TableCopyTestFixture extends CakeTestFixture {
  * @return string
  */
 	protected function _hash($db) {
-		$sourceHash = $db->execute(sprintf('CHECKSUM TABLE `%s`', $this->table), ['log' => false]);
-		return $sourceHash->fetch()->Checksum;
+		$db_conn = $db->getConnection();
+		$sth = $db_conn->prepare("CHECKSUM TABLE " . $this->table);
+		$sth->execute();
+		$result = $sth->fetch(PDO::FETCH_ASSOC);
+		$sth->closeCursor();
+		$checksum = $result['Checksum'];
+
+		return $checksum;
 	}
 
 }
