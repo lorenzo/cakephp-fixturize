@@ -30,6 +30,12 @@ class TableCopyTestFixture extends CakeTestFixture {
 	public static $_tableHashes = [];
 
 /**
+ * Indicates whether or not errors while inserting should be ignored.
+ *
+ * @var bool
+ */
+	protected $_ignoreOnInsert = false;
+/**
  * Initializes this fixture class
  *
  * @param DboSource $db
@@ -83,7 +89,8 @@ class TableCopyTestFixture extends CakeTestFixture {
 		$query = sprintf('TRUNCATE TABLE %s', $db->fullTableName($this->table));
 		$db->execute($query, ['log' => false]);
 
-		$query = sprintf('INSERT INTO %s SELECT * FROM %s', $db->fullTableName($this->table), $sourceTable);
+		$sql = $this->_ignoreOnInsert ? 'INSERT IGNORE INTO %s SELECT * FROM %s' : 'INSERT INTO %s SELECT * FROM %s';
+		$query = sprintf($sql, $db->fullTableName($this->table), $sourceTable);
 		$db->execute($query, ['log' => false]);
 
 		static::$_tableHashes[$this->table] = $this->_hash($db);
